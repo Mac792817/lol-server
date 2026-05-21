@@ -2,17 +2,15 @@ const WebSocket = require('ws');
 const port = process.env.PORT || 8080;
 const wss = new WebSocket.Server({ port });
 
-// 房间管理
 const rooms = {};
 
 wss.on('connection', (ws) => {
-    console.log("新客户端连接");
+    console.log("✅ 新玩家连接");
 
     ws.on('message', (data) => {
         try {
             const msg = JSON.parse(data);
-            const { type, roomId, playerId } = msg;
-
+            const { type, roomId } = msg;
             if (!roomId) return;
 
             // 加入房间
@@ -21,29 +19,21 @@ wss.on('connection', (ws) => {
                 if (!rooms[roomId].includes(ws)) {
                     rooms[roomId].push(ws);
                 }
+            }
 
-                // 广播给房间所有人
+            // 广播给房间里**所有人（包括自己房间的另一个人）**
+            if (rooms[roomId]) {
                 rooms[roomId].forEach(client => {
-                    if (client.readyState === WebSocket.OPEN) {
+                    if (client !== ws && client.readyState === WebSocket.OPEN) {
                         client.send(data);
                     }
                 });
             }
-
-            // 攻击 / 技能 广播
-            if (type === "attack" || type === "skill") {
-                if (rooms[roomId]) {
-                    rooms[roomId].forEach(client => {
-                        if (client.readyState === WebSocket.OPEN) {
-                            client.send(data);
-                        }
-                    });
-                }
-            }
-        } catch (e) { }
+        } catch (e) {
+            console.error(e);
+        }
     });
 
-    // 断开连接清理
     ws.on('close', () => {
         for (const roomId in rooms) {
             rooms[roomId] = rooms[roomId].filter(client => client !== ws);
@@ -52,4 +42,4 @@ wss.on('connection', (ws) => {
     });
 });
 
-console.log("服务器已启动，端口：" + port);
+console.log("🎮 联机服务器启动");
