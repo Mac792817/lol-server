@@ -2,101 +2,104 @@ const WebSocket = require('ws');
 const port = process.env.PORT || 8080;
 const wss = new WebSocket.Server({ port });
 
-// 全局房间数据
 const rooms = {};
 
-// 广播给房间所有人
-function broadcast(roomId, data) {
-    if (!rooms[roomId]) return;
-    rooms[roomId].users.forEach(ws => {
-        if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(data));
-    });
+function broadcast(roomId, msg) {
+  if (!rooms[roomId]) return;
+  rooms[roomId].users.forEach(ws => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(msg));
+    }
+  });
 }
 
 wss.on('connection', (ws) => {
-    console.log("新玩家连接");
+  console.log('玩家连接');
 
-    ws.on('message', async (data) => {
-        try {
-            const msg = JSON.parse(data);
-            const { roomId, type, playerId, hero } = msg;
-            if (!roomId) return;
+  ws.on('message', (data) => {
+    try {
+      const msg = JSON.parse(data);
+      const { roomId, type, playerId, hero } = msg;
 
-            // 1. 创建房间
-            if (!rooms[roomId]) {
-                rooms[roomId] = {
-                    users: [],
-                    players: {},
-                    fighting: false,
-                    turn: 0
-                };
-            }
-            const room = rooms[roomId];
-            room.users.push(ws);
+      if (!roomId) return;
+      if (!rooms[roomId]) {
+        rooms[roomId] = {
+          users: [],
+          players: {},
+          fighting: false,
+        };
+      }
 
-            // 2. 玩家加入
-            if (type === "join") {
-                room.players[playerId] = {
-                    hero,
-                    hp: hero.hp,
-                    mp: 0,
-                    uid: playerId
-                };
-                broadcast(roomId, {
-                    type: "init",
-                    players: room.players
-                });
-            }
+      const room = rooms[roomId];
+      room.users.push(ws);
 
-            // 3. 开始战斗（服务器接管全部逻辑）
-            if (type === "start" && !room.fighting) {
-                room.fighting = true;
-                const p = Object.values(room.players);
-                if (p.length < 2) return;
+      // 玩家加入
+      if (type === 'join') {
+        if (!playerId || !hero) return;
 
-                // 服务器统一运行战斗循环！！！
-                const battleLoop = setInterval(() => {
-                    const p1 = p[0];
-                    const p2 = p[1];
+        room.players[playerId] = {
+          playerId,
+          hero,
+          hp: hero.hp,
+          mp: 0,
+        };
 
-                    // 回合计算
-                    if (room.turn % 2 === 0) {
-                        // P1 攻击
-                        let dmg = Math.max(1, Math.round(p1.hero.atk * 100 / (100 + p2.hero.def)));
-                        p2.hp = Math.max(0, p2.hp - dmg);
-                        p1.mp = Math.min(100, p1.mp + 30);
-                    } else {
-                        // P2 攻击
-                        let dmg = Math.max(1, Math.round(p2.hero.atk * 100 / (100 + p1.hero.def)));
-                        p1.hp = Math.max(0, p1.hp - dmg);
-                        p2.mp = Math.min(100, p2.mp + 30);
-                    }
+        // 发送完整玩家列表
+        broadcast(roomId, {
+          type: 'playerList',
+          players: room.players,
+        });
+      }
 
-                    // 广播全量状态
-                    broadcast(roomId, {
-                        type: "sync",
-                        players: room.players,
-                        turn: room.turn
-                    });
+      // 开始战斗
+      if (type === 'start') {
+        if (room.fighting) return;
+        room.fighting = true;
 
-                    room.turn++;
+        const players = Object.values(room.players);
+        if (players.length < 2) return;
 
-                    // 结束判断
-                    if (p1.hp <= 0 || p2.hp <= 0) {
-                        clearInterval(battleLoop);
-                        broadcast(roomId, {
-                            type: "end",
-                            win: p1.hp > 0
-                        });
-                        room.fighting = false;
-                    }
-                }, 1000);
-            }
+        const p1 = players[0];
+        const p2 = players[1];
 
-        } catch (e) {}
-    });
+        const interval = setInterval(() => {
+          if (p1.hp <= 0 || p2.hp <= 0) {
+            clearInterval(interval);
+            broadcast(roomId, {
+              type: 'end',
+              win: p1.hp > 0,
+            });
+            room.fighting = false;
+            return;
+          }
 
-    ws.on('close', () => {});
+          // p1 攻击
+          let dmg1 = Math.max(1, Math.round(p1.hero.atk * 100 / (100 + p2.hero.def)));
+          p2.hp = Math.max(0, p2.hp - dmg1);
+          p1.mp = Math.min(100, p1.mp + 30);
+
+          broadcast(roomId, {
+            type: 'sync',
+            players: room.players,
+          });
+
+          setTimeout(() => {
+            if (p1.hp <= 0 || p2.hp <= 0) return;
+
+            // p2 攻击
+            let dmg2 = Math.max(1, Math.round(p2.hero.atk * 100 / (100 + p1.hero.def)));
+            p1.hp = Math.max(0, p1.hp - dmg2);
+            p2.mp = Math.min(100, p2.mp + 30);
+
+            broadcast(roomId, {
+              type: 'sync',
+              players: room.players,
+            });
+          }, 1000);
+        }, 2000);
+      }
+    } catch (err) {}
+  });
 });
 
-console.log("服务器启动成功");
+console.log('服务器已启动');
