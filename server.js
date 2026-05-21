@@ -3,47 +3,37 @@ const wss = new WebSocket.Server({ port: 8080 });
 
 const rooms = {};
 
-function sendToAll(roomId, msg) {
-  if (!rooms[roomId]) return;
-  rooms[roomId].forEach(ws => {
-    if (ws.readyState === 1) ws.send(JSON.stringify(msg));
-  });
-}
-
 wss.on('connection', (ws) => {
-  let uid = Math.random().toString(36).slice(2);
 
-  ws.on('message', (data) => {
-    let msg = JSON.parse(data);
-    let roomId = msg.roomId;
+  ws.on('message', (msg) => {
+    const data = JSON.parse(msg);
+    const roomId = data.roomId;
 
-    if (msg.type === 'create') {
+    if (data.type === 'createRoom') {
       rooms[roomId] = [ws];
-      console.log("创建房间");
+      console.log("创建房间：" + roomId);
+      return;
     }
 
-    if (msg.type === 'join') {
+    if (data.type === 'joinRoom') {
       if (rooms[roomId]) rooms[roomId].push(ws);
-      console.log("加入房间");
+      console.log("加入房间：" + roomId);
+      return;
     }
 
-    if (msg.type === 'select') {
-      if (!rooms[roomId]) return;
+    if (data.type === 'selectHero') {
+      const room = rooms[roomId];
+      if (!room) return;
 
-      let p1 = rooms[roomId][0].hero;
-      let p2 = msg.hero;
+      if (!room[0].hero) room[0].hero = data.hero;
+      else room[1].hero = data.hero;
 
-      rooms[roomId][0].hero = rooms[roomId][0].hero || msg.hero;
-      rooms[roomId][1] = ws;
-      ws.hero = msg.hero;
-
-      sendToAll(roomId, {
-        type: 'ready',
-        me: msg.hero,
-        enemy: rooms[roomId][0].hero
-      });
+      if (room[0].hero && room[1].hero) {
+        room[0].send(JSON.stringify({ type: "ready", enemy: room[1].hero }));
+        room[1].send(JSON.stringify({ type: "ready", enemy: room[0].hero }));
+      }
     }
   });
 });
 
-console.log("服务器启动 8080");
+console.log("✅ 服务器启动成功：8080");
