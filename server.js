@@ -12,9 +12,12 @@ function broadcast(roomId, data) {
 }
 
 wss.on('connection', (ws) => {
+  console.log("✅ 有客户端连接到服务器！");
+
   ws.on('message', (data) => {
     try {
       const msg = JSON.parse(data);
+      console.log("收到客户端消息", msg);
       const { roomId, type, playerId, hero } = msg;
       if (!roomId) return;
 
@@ -24,41 +27,36 @@ wss.on('connection', (ws) => {
       const room = rooms[roomId];
       if (!room.users.includes(ws)) room.users.push(ws);
 
-      // ========== 加入房间 ==========
       if (type === "join") {
         let player = { playerId, hero, hp: hero.hp, mp: 0 };
-        
         if (!room.p1) {
           room.p1 = player;
+          console.log("玩家1加入", roomId);
         } else {
           room.p2 = player;
+          console.log("玩家2加入", roomId);
         }
 
-        // 只有两个人都齐了才发送！
         if (room.p1 && room.p2) {
-          broadcast(roomId, {
-            type: "ready",
-            p1: room.p1,
-            p2: room.p2
-          });
+          console.log("✅ 双方都已就绪！下发ready");
+          broadcast(roomId, { type: "ready", p1: room.p1, p2: room.p2 });
         }
       }
 
-      // ========== 开始战斗 ==========
       if (type === "start" && !room.fighting) {
+        console.log("开始战斗！");
         if (!room.p1 || !room.p2) return;
         room.fighting = true;
-
         let p1 = room.p1, p2 = room.p2;
-        let t = setInterval(() => {
+
+        const battleTimer = setInterval(() => {
           if (p1.hp <= 0 || p2.hp <= 0) {
-            clearInterval(t);
+            clearInterval(battleTimer);
             broadcast(roomId, { type: "end", win: p2.hp <= 0 ? p1.playerId : p2.playerId });
             room.fighting = false;
             return;
           }
 
-          // P1 攻击
           let d1 = Math.max(1, Math.round(p1.hero.atk * 100 / (100 + (p2.hero.def || 0))));
           p2.hp -= d1;
           p1.mp = Math.min(100, p1.mp + 30);
@@ -73,12 +71,11 @@ wss.on('connection', (ws) => {
             broadcast(roomId, { type: "hit", target: "p1", dmg: d2 });
             broadcast(roomId, { type: "state", p1, p2 });
           }, 1000);
-
         }, 2000);
       }
-
-    } catch (e) {}
+    } catch (e) {
+      console.error("服务器错误", e);
+    }
   });
 });
-
-console.log("服务器启动成功 ✅");
+console.log("服务器启动成功，端口", port);
