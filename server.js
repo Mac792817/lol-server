@@ -5,7 +5,6 @@ const rooms = {};
 
 wss.on('connection', ws => {
     console.log("✅ 新玩家连接");
-    ws.binaryType = 'utf8'; // 强制发文本，不发二进制
     ws.on('message', data => {
         try {
             const msg = JSON.parse(data);
