@@ -11,28 +11,34 @@ wss.on('connection', (ws) => {
 	ws.on('message', (data) => {
 		try {
 			const msg = JSON.parse(data);
-			const { roomId } = msg;
+			const { roomId, type, playerId, hero, hp } = msg;
 			if (!roomId) return;
 
 			// 房间不存在则创建
 			if (!rooms[roomId]) {
 				rooms[roomId] = {
 					users: [],
-					hostId: null
+					hostId: null,
+					hostInfo: null
 				};
 			}
 
 			// 加入房间
 			if (msg.type === "join") {
-				// 第一个进房 = 房主
+				// 第一个进房 = 房主，保存信息
 				if (!rooms[roomId].hostId) {
-					rooms[roomId].hostId = msg.playerId;
+					rooms[roomId].hostId = playerId;
+					rooms[roomId].hostInfo = msg;
+					ws.send(JSON.stringify({ type: "host", isHost: true }));
+				} else {
+					// 后进玩家：立刻下发房主完整信息
+					ws.send(JSON.stringify({ type: "host", isHost: false }));
+					ws.send(JSON.stringify(rooms[roomId].hostInfo));
 				}
-				// 加入用户列表
 				rooms[roomId].users.push(ws);
 			}
 
-			// 广播给房间所有人（核心联机功能）
+			// 广播给房间所有人
 			rooms[roomId].users.forEach(client => {
 				if (client.readyState === WebSocket.OPEN) {
 					client.send(data);
@@ -42,14 +48,11 @@ wss.on('connection', (ws) => {
 		} catch (e) {}
 	});
 
-	// 断开连接清理
+	// 断开清理
 	ws.on('close', () => {
 		for (let roomId in rooms) {
 			rooms[roomId].users = rooms[roomId].users.filter(c => c !== ws);
-			// 没人就删房间
-			if (rooms[roomId].users.length === 0) {
-				delete rooms[roomId];
-			}
+			if (rooms[roomId].users.length === 0) delete rooms[roomId];
 		}
 	});
 });
