@@ -3,52 +3,47 @@ const wss = new WebSocket.Server({ port: 8080 });
 
 const rooms = {};
 
-function broadcast(roomId, data) {
+function sendToAll(roomId, msg) {
   if (!rooms[roomId]) return;
-  rooms[roomId].players.forEach(p => {
-    if (p.ws.readyState === 1) p.ws.send(JSON.stringify(data));
+  rooms[roomId].forEach(ws => {
+    if (ws.readyState === 1) ws.send(JSON.stringify(msg));
   });
 }
 
 wss.on('connection', (ws) => {
-  const uid = Math.random().toString(36).substr(2, 10);
+  let uid = Math.random().toString(36).slice(2);
 
-  ws.on('message', (msg) => {
-    const data = JSON.parse(msg);
-    const roomId = data.roomId;
+  ws.on('message', (data) => {
+    let msg = JSON.parse(data);
+    let roomId = msg.roomId;
 
-    if (data.type === 'createRoom') {
-      rooms[roomId] = {
-        players: [{ uid, ws }],
-        p1: null, p2: null
-      };
-      return;
+    if (msg.type === 'create') {
+      rooms[roomId] = [ws];
+      console.log("创建房间");
     }
 
-    if (data.type === 'joinRoom') {
-      rooms[roomId].players.push({ uid, ws });
-      return;
+    if (msg.type === 'join') {
+      if (rooms[roomId]) rooms[roomId].push(ws);
+      console.log("加入房间");
     }
 
-    if (data.type === 'pickBattleHero') {
-      const room = rooms[roomId];
-      const hero = data.hero;
+    if (msg.type === 'select') {
+      if (!rooms[roomId]) return;
 
-      if (!room.p1) {
-        room.p1 = { uid, hero, hp: hero.hp };
-      } else {
-        room.p2 = { uid, hero, hp: hero.hp };
-      }
+      let p1 = rooms[roomId][0].hero;
+      let p2 = msg.hero;
 
-      if (room.p1 && room.p2) {
-        broadcast(roomId, {
-          type: "battleReady",
-          p1: room.p1,
-          p2: room.p2
-        });
-      }
+      rooms[roomId][0].hero = rooms[roomId][0].hero || msg.hero;
+      rooms[roomId][1] = ws;
+      ws.hero = msg.hero;
+
+      sendToAll(roomId, {
+        type: 'ready',
+        me: msg.hero,
+        enemy: rooms[roomId][0].hero
+      });
     }
   });
 });
 
-console.log("✅ 服务器启动 8080");
+console.log("服务器启动 8080");
