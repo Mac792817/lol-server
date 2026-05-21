@@ -38,7 +38,7 @@ wss.on('connection', (ws) => {
                 ws.send(JSON.stringify(rooms[roomId].info));
             }
 
-            // 广播给所有人
+            // 广播给所有人 🔥 所有消息：攻击、技能、开始、回合、结束全部转发
             rooms[roomId].users.forEach(client => {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(data);
