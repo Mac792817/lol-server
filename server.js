@@ -1,33 +1,62 @@
-const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 8080 });
-const rooms = {};
+let socketTask = null
+let playerId = ""
+const listeners = []
 
-function broadcast(roomId, data) {
-  if (!rooms[roomId]) return;
-  rooms[roomId].forEach(ws => ws.send(JSON.stringify(data)));
+// 安全默认回调，不传也不会报错
+export function initWS(callback = () => {}) {
+  if (socketTask && socketTask.readyState === 1) {
+    callback()
+    return
+  }
+
+  playerId = Date.now() + "_" + Math.random().toString(36).substr(2, 8)
+
+  socketTask = uni.connectSocket({
+    url: "wss://lolserver-production.up.railway.app",
+    timeout: 10000,
+    success: () => console.log("✅ 开始连接服务器")
+  })
+
+  socketTask.onOpen(() => {
+    console.log("✅ 服务器连接成功")
+    callback()
+  })
+
+  socketTask.onMessage((res) => {
+    try {
+      const data = JSON.parse(res.data)
+      // ✅ 过滤掉非函数，彻底解决 i is not a function
+      listeners.filter(fn => typeof fn === 'function').forEach(fn => fn(data))
+    } catch (e) {}
+  })
+
+  socketTask.onClose(() => {
+    socketTask = null
+    setTimeout(() => initWS(callback), 2000)
+  })
+
+  socketTask.onError((err) => {
+    console.error("❌ 连接失败", err)
+    socketTask = null
+    setTimeout(() => initWS(callback), 2000)
+  })
 }
 
-wss.on('connection', (ws) => {
-  ws.on('message', (msg) => {
-    const data = JSON.parse(msg);
-    const roomId = data.roomId;
+export function sendMsg(data) {
+  if (socketTask && socketTask.readyState === 1) {
+    socketTask.send({ data: JSON.stringify(data) })
+  }
+}
 
-    if (data.type === 'createRoom') {
-      rooms[roomId] = [ws];
-    }
-    if (data.type === 'joinRoom') {
-      rooms[roomId].push(ws);
-    }
-    if (data.type === 'pickBattleHero') {
-      const room = rooms[roomId];
-      if (room.length === 2) {
-        broadcast(roomId, {
-          type: "battleReady",
-          p1: { hero: data.hero, uid: 1 },
-          p2: { hero: room[1].hero, uid: 2 }
-        })
-      }
-    }
-  })
-})
-console.log("服务器启动成功")
+export function onMsg(fn) {
+  if(typeof fn !== 'function') return ()=>{}
+  listeners.push(fn)
+  return () => {
+    const idx = listeners.indexOf(fn)
+    if(idx > -1) listeners.splice(idx, 1)
+  }
+}
+
+export function getPlayerId() {
+  return playerId
+}
