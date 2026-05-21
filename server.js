@@ -5,15 +5,14 @@ const rooms = {};
 
 wss.on('connection', ws => {
     console.log("✅ 新玩家连接");
+    ws.binaryType = 'utf8'; // 强制发文本，不发二进制
     ws.on('message', data => {
-        console.log("📥 收到客户端消息：", data); // 现在这里一定会打印！
         try {
             const msg = JSON.parse(data);
             const { roomId } = msg;
             if (!roomId) return;
             if (!rooms[roomId]) rooms[roomId] = [];
             rooms[roomId].push(ws);
-            // 广播给房间所有人
             rooms[roomId].forEach(c => {
                 if (c.readyState === WebSocket.OPEN) c.send(data);
             })
