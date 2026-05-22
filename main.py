@@ -107,22 +107,24 @@ def user_heroes(user_id: str):
     conn.close()
     return {"heroes":lst}
 
-# 每日签到（+150金币，修复格式）
+# 每日签到接口（彻底修复版）
 @app.get("/api/user-sign")
 def user_sign(user_id: str):
-    conn = get_db()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        # 新建用户自动1000金币
-        cur.execute("INSERT INTO users(user_id) VALUES(%s) ON CONFLICT DO NOTHING", (user_id,))
-        # 签到加金币
-        cur.execute("UPDATE users SET gold = gold + 150 WHERE user_id=%s", (user_id,))
+        conn = get_db()
+        cur = conn.cursor()
+
+        # 确保用户存在
+        cur.execute("INSERT INTO users (user_id) VALUES (%s) ON CONFLICT DO NOTHING", (user_id,))
+
+        # 增加金币
+        cur.execute("UPDATE users SET gold = gold + 150 WHERE user_id = %s", (user_id,))
+
         conn.commit()
-        return {"code":200,"msg":"签到成功，获得150金币"}
-    except Exception as e:
-        return {"code":400,"msg":"签到失败"}
-    finally:
         conn.close()
+        return {"code": 200, "msg": "签到成功，+150金币"}
+    except:
+        return {"code": 400, "msg": "签到失败"}
 
 
 # 4. 创建房间
