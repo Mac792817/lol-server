@@ -100,6 +100,7 @@ def select_hero(room_id: str, user_id: str, hero_id: int):
     return {"code":200,"msg":"英雄选择成功"}
 
 # 4. 获取对战双方完整数据
+# 4. 获取对战双方完整数据（修复null报错）
 @app.get("/api/battle-data")
 def battle_data(room_id: str):
     conn = get_db()
@@ -116,16 +117,29 @@ def battle_data(room_id: str):
     """, (room_id,))
     res = cur.fetchone()
     conn.close()
+
+    # 空值兜底，防止前端undefined
+    if not res:
+        return {"host_id":"","join_id":"","host":{},"join":{}}
+
+    def parse_skill(sk):
+        try:
+            return json.loads(sk) if sk else []
+        except:
+            return []
+
     return {
-        "host_id": res["host_id"],
-        "join_id": res["join_id"],
+        "host_id": res["host_id"] or "",
+        "join_id": res["join_id"] or "",
         "host":{
-            "name":res["h1_name"],"img":res["h1_img"],"hp":res["h1_hp"],
-            "atk":res["h1_atk"],"def":res["h1_def"],"skills":json.loads(res["h1_skills"]) if res["h1_skills"] else []
+            "name":res["h1_name"] or "","img":res["h1_img"] or "",
+            "hp":res["h1_hp"] or 100,"atk":res["h1_atk"] or 0,
+            "def":res["h1_def"] or 0,"skills":parse_skill(res["h1_skills"])
         },
         "join":{
-            "name":res["h2_name"],"img":res["h2_img"],"hp":res["h2_hp"],
-            "atk":res["h2_atk"],"def":res["h2_def"],"skills":json.loads(res["h2_skills"]) if res["h2_skills"] else []
+            "name":res["h2_name"] or "","img":res["h2_img"] or "",
+            "hp":res["h2_hp"] or 100,"atk":res["h2_atk"] or 0,
+            "def":res["h2_def"] or 0,"skills":parse_skill(res["h2_skills"])
         }
     }
 
