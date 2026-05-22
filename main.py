@@ -47,10 +47,10 @@ def init_db():
       status TEXT DEFAULT 'waiting',
       create_at TIMESTAMP DEFAULT NOW()
     );
-    -- 初始化亚索、劫
+    -- 腾讯官方永久CDN图片，稳定可用
     INSERT INTO heroes (name,img,hp,atk,def,skills) VALUES
-    ('亚索','https://p3-flow-image-sign.byteimg.com/tos-cn-i-a9rns2rl98/00693939303443089d7d37d390043311~tplv-a9rns2rl98-image.image',120,28,8,'[{"name":"斩钢闪","unlockLv":1,"cost":20}]'),
-    ('劫','https://p3-flow-image-sign.byteimg.com/tos-cn-i-a9rns2rl98/92221113334440089999922f11344411~tplv-a9rns2rl98-image.image',110,32,6,'[{"name":"影奥义·诸刃","unlockLv":1,"cost":20}]')
+    ('亚索','https://game.gtimg.cn/images/lol/act/img/champion/Yasuo.png',120,28,8,'[{"name":"斩钢闪","unlockLv":1,"cost":20}]'),
+    ('劫','https://game.gtimg.cn/images/lol/act/img/champion/Zed.png',110,32,6,'[{"name":"影奥义·诸刃","unlockLv":1,"cost":20}]')
     ON CONFLICT DO NOTHING;
     """
     cur.execute(sql)
