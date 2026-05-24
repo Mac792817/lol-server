@@ -2,8 +2,10 @@ from flask import Flask, jsonify, request
 import requests
 import re
 import os
+from flask_cors import CORS  # 新增跨域支持
 
 app = Flask(__name__)
+CORS(app)  # 允许所有跨域请求
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
@@ -40,7 +42,6 @@ def parse_douyin():
     except Exception as e:
         return jsonify({"code": 500, "msg": str(e)})
 
-# 健康检查（Railway 必须有这个）
 @app.route('/')
 def index():
     return "抖音去水印API运行中～", 200
