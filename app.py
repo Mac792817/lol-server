@@ -5,8 +5,20 @@ from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 
-def parse_douyin(url):
+def extract_url(text):
+    url_pattern = r'https?://[^\s<>"\'`]+'
+    urls = re.findall(url_pattern, text)
+    for url in urls:
+        if 'douyin' in url.lower() or 'v.douyin' in url.lower():
+            return url.strip('"\'<>')
+    return None
+
+def parse_douyin(input_text):
     try:
+        url = extract_url(input_text)
+        if not url:
+            url = input_text
+        
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Referer': 'https://www.douyin.com/'
