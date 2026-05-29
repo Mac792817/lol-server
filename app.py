@@ -1,7 +1,7 @@
 import os
 import re
 import requests
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 
@@ -37,7 +37,7 @@ def parse_douyin(url):
 
 @app.route('/')
 def index():
-    return '抖音无水印视频解析 API'
+    return render_template('index.html')
 
 @app.route('/api/parse', methods=['POST'])
 def api_parse():
