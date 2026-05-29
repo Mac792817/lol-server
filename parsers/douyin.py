@@ -19,7 +19,8 @@ class DouyinParser(BaseParser):
                 return None
             else:
                 return self._parse_douyin_short(url)
-        except Exception:
+        except Exception as e:
+            print(f"Douyin parse error: {e}")
             return None
     
     def _parse_douyin_video(self, url):
@@ -29,6 +30,7 @@ class DouyinParser(BaseParser):
             
             if response:
                 html = response.text
+                
                 match = re.search(r'window\.__INITIAL_STATE__\s*=\s*(.*?);\s*</script>', html)
                 if match:
                     try:
@@ -59,7 +61,47 @@ class DouyinParser(BaseParser):
                         'platform': 'douyin',
                         'duration': 0
                     }
-        except Exception:
+                
+                match = re.search(r'play_url.*?:.*?"([^"]+)"', html)
+                if match:
+                    play_url = match.group(1).replace('\\u002F', '/').replace('playwm', 'play')
+                    title_match = re.search(r'title.*?:.*?"([^"]+)"', html)
+                    title = title_match.group(1) if title_match else 'douyin_video'
+                    return {
+                        'title': title,
+                        'url': play_url,
+                        'platform': 'douyin',
+                        'duration': 0
+                    }
+                
+                match = re.search(r'video:\s*({.*?})\s*,', html, re.DOTALL)
+                if match:
+                    try:
+                        video_data = json.loads(match.group(1))
+                        play_url = video_data.get('playUrl', '') or video_data.get('url', '')
+                        if play_url:
+                            play_url = play_url.replace('\\u002F', '/').replace('playwm', 'play')
+                            title = video_data.get('title', 'douyin_video')
+                            return {
+                                'title': title,
+                                'url': play_url,
+                                'platform': 'douyin',
+                                'duration': video_data.get('duration', 0)
+                            }
+                    except Exception:
+                        pass
+                
+                match = re.search(r'"url":"([^"]+play[^"]+)"', html)
+                if match:
+                    play_url = match.group(1).replace('\\u002F', '/').replace('playwm', 'play')
+                    return {
+                        'title': 'douyin_video',
+                        'url': play_url,
+                        'platform': 'douyin',
+                        'duration': 0
+                    }
+        except Exception as e:
+            print(f"Douyin parse video error: {e}")
             pass
         return None
     
@@ -71,5 +113,6 @@ class DouyinParser(BaseParser):
                 if response and response.headers.get('Location'):
                     short_url = response.headers['Location']
             return self._parse_douyin_video(short_url)
-        except Exception:
+        except Exception as e:
+            print(f"Douyin short url error: {e}")
             return None
