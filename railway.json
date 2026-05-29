@@ -1,10 +1,23 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "nixpacksConfig": {
+      "phases": {
+        "install": {
+          "cmd": "pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple"
+        },
+        "build": {
+          "cmd": "echo 'Build completed'"
+        },
+        "start": {
+          "cmd": "gunicorn app:app --workers 2 --bind 0.0.0.0:$PORT --timeout 120"
+        }
+      }
+    }
   },
   "deploy": {
-    "startCommand": "gunicorn app:app --preload --workers 2 --bind 0.0.0.0:$PORT --timeout 120",
+    "startCommand": "gunicorn app:app --workers 2 --bind 0.0.0.0:$PORT --timeout 120",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100
   },
