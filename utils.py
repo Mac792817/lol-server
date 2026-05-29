@@ -5,7 +5,6 @@ import string
 from urllib.parse import urlparse, parse_qs, unquote
 
 def extract_urls(text):
-<<<<<<< HEAD
     url_pattern = r'https?://[^\s<>"\'`]+|www\.[^\s<>"\'`]+'
     urls = re.findall(url_pattern, text)
     return [url.strip('"\'<>') for url in urls]
@@ -17,12 +16,6 @@ def extract_video_url(text):
             return url
     return None
 
-=======
-    url_pattern = r'https?://[^\s<>"]+|www\.[^\s<>"]+'
-    urls = re.findall(url_pattern, text)
-    return [url.strip('"\'<>') for url in urls]
-
->>>>>>> fb27a5f39caeaec74eb50e0398073d57809c3362
 def get_random_string(length=16):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
@@ -30,46 +23,40 @@ def get_file_extension(url):
     parsed = urlparse(url)
     path = parsed.path
     if '.' in path:
-        ext = path.split('.')[-1].lower()
-        if ext in ['mp4', 'flv', 'webm', 'mov', 'avi', 'mkv']:
-            return ext
+        return path.split('.')[-1]
     return 'mp4'
 
 def sanitize_filename(filename):
-    invalid_chars = r'[\\/:*?"<>|]'
-    return re.sub(invalid_chars, '_', filename)[:100]
+    invalid_chars = '<>:"/\\|?*'
+    for char in invalid_chars:
+        filename = filename.replace(char, '_')
+    return filename[:200]
 
-def parse_jsonp(jsonp_str):
-    match = re.search(r'^\w+\((.*)\)$', jsonp_str)
-    if match:
-        return json.loads(match.group(1))
-    return {}
-
-def get_query_param(url, param):
-    parsed = urlparse(url)
-    return parse_qs(parsed.query).get(param, [None])[0]
-
-def decode_base64(data):
-    try:
-        import base64
-        return base64.b64decode(data).decode('utf-8')
-    except Exception:
-        return data
+def generate_user_agent():
+    user_agents = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/120.0.0.0',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0'
+    ]
+    return random.choice(user_agents)
 
 def is_valid_url(url):
     try:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
-    except Exception:
+    except:
         return False
 
-def remove_watermark(video_url):
-    return video_url.replace('playwm', 'play')
-
-def generate_user_agent():
-    from fake_useragent import UserAgent
+def parse_jsonp(jsonp_str):
     try:
-        ua = UserAgent()
-        return ua.random
-    except Exception:
-        return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        match = re.search(r'^\w+\((.*)\)$', jsonp_str)
+        if match:
+            return json.loads(match.group(1))
+        return None
+    except:
+        return None

@@ -5,11 +5,7 @@ import tempfile
 from parsers import parse_video
 from downloader import VideoDownloader
 from config import DOWNLOAD_DIR
-<<<<<<< HEAD
 from utils import is_valid_url, extract_video_url
-=======
-from utils import is_valid_url
->>>>>>> fb27a5f39caeaec74eb50e0398073d57809c3362
 
 app = Flask(__name__)
 CORS(app)
@@ -23,13 +19,10 @@ def parse():
     data = request.json
     url = data.get('url', '')
     
-<<<<<<< HEAD
     extracted_url = extract_video_url(url)
     if extracted_url:
         url = extracted_url
     
-=======
->>>>>>> fb27a5f39caeaec74eb50e0398073d57809c3362
     if not is_valid_url(url):
         return jsonify({
             'success': False,
@@ -48,7 +41,7 @@ def parse():
             return jsonify({
                 'success': False,
                 'error': 'Failed to parse video'
-            }), 400
+            }), 404
     except Exception as e:
         return jsonify({
             'success': False,
@@ -60,13 +53,10 @@ def download():
     data = request.json
     url = data.get('url', '')
     
-<<<<<<< HEAD
     extracted_url = extract_video_url(url)
     if extracted_url:
         url = extracted_url
     
-=======
->>>>>>> fb27a5f39caeaec74eb50e0398073d57809c3362
     if not is_valid_url(url):
         return jsonify({
             'success': False,
@@ -80,37 +70,25 @@ def download():
             return jsonify({
                 'success': False,
                 'error': 'Failed to parse video'
-            }), 400
+            }), 404
         
         downloader = VideoDownloader()
-        success, path = downloader.download(video_info)
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
+        temp_file.close()
         
-        if success:
-            return jsonify({
-                'success': True,
-                'data': {
-                    'title': video_info.get('title', 'video'),
-                    'platform': video_info.get('platform', 'unknown'),
-                    'download_url': f'/api/downloaded/{os.path.basename(path)}'
-                }
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': path
-            }), 500
+        downloader.download_video(video_info['url'], temp_file.name)
+        
+        return send_file(
+            temp_file.name,
+            mimetype='video/mp4',
+            as_attachment=True,
+            download_name=video_info.get('title', 'video') + '.mp4'
+        )
     except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
-
-@app.route('/api/downloaded/<filename>')
-def downloaded_file(filename):
-    filepath = os.path.join(DOWNLOAD_DIR, filename)
-    if os.path.exists(filepath):
-        return send_file(filepath, as_attachment=True)
-    return jsonify({'success': False, 'error': 'File not found'}), 404
 
 @app.route('/health')
 def health():
@@ -118,4 +96,4 @@ def health():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=port)
