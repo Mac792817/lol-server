@@ -5,7 +5,11 @@ import tempfile
 from parsers import parse_video
 from downloader import VideoDownloader
 from config import DOWNLOAD_DIR
+<<<<<<< HEAD
 from utils import is_valid_url, extract_video_url
+=======
+from utils import is_valid_url
+>>>>>>> fb27a5f39caeaec74eb50e0398073d57809c3362
 
 app = Flask(__name__)
 CORS(app)
@@ -19,10 +23,13 @@ def parse():
     data = request.json
     url = data.get('url', '')
     
+<<<<<<< HEAD
     extracted_url = extract_video_url(url)
     if extracted_url:
         url = extracted_url
     
+=======
+>>>>>>> fb27a5f39caeaec74eb50e0398073d57809c3362
     if not is_valid_url(url):
         return jsonify({
             'success': False,
@@ -53,10 +60,13 @@ def download():
     data = request.json
     url = data.get('url', '')
     
+<<<<<<< HEAD
     extracted_url = extract_video_url(url)
     if extracted_url:
         url = extracted_url
     
+=======
+>>>>>>> fb27a5f39caeaec74eb50e0398073d57809c3362
     if not is_valid_url(url):
         return jsonify({
             'success': False,

@@ -5,6 +5,7 @@ import string
 from urllib.parse import urlparse, parse_qs, unquote
 
 def extract_urls(text):
+<<<<<<< HEAD
     url_pattern = r'https?://[^\s<>"\'`]+|www\.[^\s<>"\'`]+'
     urls = re.findall(url_pattern, text)
     return [url.strip('"\'<>') for url in urls]
@@ -16,6 +17,12 @@ def extract_video_url(text):
             return url
     return None
 
+=======
+    url_pattern = r'https?://[^\s<>"]+|www\.[^\s<>"]+'
+    urls = re.findall(url_pattern, text)
+    return [url.strip('"\'<>') for url in urls]
+
+>>>>>>> fb27a5f39caeaec74eb50e0398073d57809c3362
 def get_random_string(length=16):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
