@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from PIL import Image
 
+
 # 初始化应用
 app = FastAPI(title="文件转换小程序后端", version="1.0")
 
