@@ -1,1 +1,0 @@
-web: gunicorn file_convert.wsgi:application --log-file -
