@@ -1,0 +1,11 @@
+[build]
+builder = "python"
+pythonVersion = "3.11"
+
+[deploy]
+startCommand = "cd file_convert_backend && gunicorn file_convert.wsgi:application"
+port = 8000
+
+[env]
+PYTHONPATH = "file_convert_backend"
+DJANGO_SETTINGS_MODULE = "file_convert.settings"
