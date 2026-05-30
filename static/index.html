@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件转换测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .upload-area { border: 2px dashed #ccc; padding: 40px; text-align: center; cursor: pointer; margin-bottom: 20px; }
+        .upload-area:hover { border-color: #007bff; }
+        select, button { padding: 10px; width: 100%; margin-bottom: 10px; font-size: 16px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .status { margin-top: 20px; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .loading { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>📁 文件转换测试</h1>
+    
+    <div class="upload-area" id="upload-area">
+        <p>📤 点击或拖拽上传图片</p>
+        <small>支持: JPG, PNG, WebP, GIF, BMP</small>
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display: none;">
+    
+    <select id="target-format">
+        <option value="png">转换为 PNG</option>
+        <option value="jpg">转换为 JPG</option>
+        <option value="webp">转换为 WebP</option>
+        <option value="gif">转换为 GIF</option>
+        <option value="bmp">转换为 BMP</option>
+    </select>
+    
+    <button id="convert-btn" disabled>开始转换</button>
+    
+    <div class="status" id="status" style="display: none;"></div>
+    
+    <script>
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const convertBtn = document.getElementById('convert-btn');
+        const status = document.getElementById('status');
+        const targetFormat = document.getElementById('target-format');
+        
+        let selectedFile = null;
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            selectedFile = e.dataTransfer.files[0];
+            updateButton();
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            selectedFile = e.target.files[0];
+            updateButton();
+        });
+        
+        function updateButton() {
+            convertBtn.disabled = !selectedFile;
+        }
+        
+        convertBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            status.style.display = 'block';
+            status.className = 'status loading';
+            status.textContent = '转换中...';
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('target_format', targetFormat.value);
+            
+            try {
+                const res = await fetch('/api/convert', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if (data.code === 200) {
+                    status.className = 'status success';
+                    status.innerHTML = `✅ 转换成功！<br><a href="/api/download?file_id=${data.data.file_id}" download>点击下载</a>`;
+                } else {
+                    status.className = 'status error';
+                    status.textContent = '❌ ' + data.msg;
+                }
+            } catch (e) {
+                status.className = 'status error';
+                status.textContent = '❌ 转换失败: ' + e.message;
+            }
+        });
+        
+        fetch('/health').then(r => r.json()).then(d => console.log('服务状态:', d));
+    </script>
+</body>
+</html>
