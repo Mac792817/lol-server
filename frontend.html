@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件转换工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .upload-area i {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .upload-area p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .upload-area small {
+            color: #999;
+            font-size: 13px;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .format-section {
+            margin-bottom: 25px;
+        }
+
+        .format-section label {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .format-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #333;
+            appearance: none;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 12px center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .format-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .download-btn {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .download-btn:hover {
+            background: #218838;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #eee;
+            border-radius: 2px;
+            margin-top: 15px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar .progress {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📁 文件转换工具</h1>
+        
+        <div class="upload-area" id="upload-area">
+            <i>📤</i>
+            <p>点击或拖拽文件到此处上传</p>
+            <small>支持: JPG、PNG、WebP、GIF、BMP、TXT、DOCX、XLSX、CSV、PPTX</small>
+            <input type="file" id="file-input" accept="image/*,.txt,.docx,.xlsx,.csv,.pptx">
+        </div>
+
+        <div class="file-info" id="file-info" style="display: none;"></div>
+
+        <div class="format-section">
+            <label for="target-format">转换为:</label>
+            <select id="target-format" class="format-select">
+                <option value="">请选择目标格式</option>
+                <optgroup label="图片格式">
+                    <option value="jpg">JPG</option>
+                    <option value="png">PNG</option>
+                    <option value="webp">WebP</option>
+                    <option value="gif">GIF</option>
+                    <option value="bmp">BMP</option>
+                </optgroup>
+                <optgroup label="文档格式">
+                    <option value="txt">TXT</option>
+                    <option value="docx">DOCX</option>
+                    <option value="xlsx">XLSX</option>
+                    <option value="csv">CSV</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <button class="btn" id="convert-btn" disabled>
+            <i>🔄</i> 开始转换
+        </button>
+
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress"></div>
+        </div>
+
+        <div class="status" id="status"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://lolserver-production.up.railway.app';
+
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const targetFormat = document.getElementById('target-format');
+        const convertBtn = document.getElementById('convert-btn');
+        const status = document.getElementById('status');
+        const progressBar = document.getElementById('progress-bar');
+        const progress = progressBar.querySelector('.progress');
+
+        let selectedFile = null;
+
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+            const size = (file.size / 1024).toFixed(1) + ' KB';
+            fileInfo.innerHTML = `<strong>文件名:</strong> ${file.name}<br><strong>大小:</strong> ${size}`;
+            fileInfo.style.display = 'block';
+            updateConvertBtn();
+        }
+
+        targetFormat.addEventListener('change', updateConvertBtn);
+
+        function updateConvertBtn() {
+            const hasFile = selectedFile !== null;
+            const hasFormat = targetFormat.value !== '';
+            convertBtn.disabled = !(hasFile && hasFormat);
+        }
+
+        convertBtn.addEventListener('click', async () => {
+            if (!selectedFile || !targetFormat.value) return;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            convertBtn.disabled = true;
+            status.style.display = 'block';
+            status.className = 'status loading';
+            status.innerHTML = '<i>⏳</i> 正在转换中...';
+            progressBar.style.display = 'block';
+            progress.style.width = '0%';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/file/convert/?target_format=${targetFormat.value}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    status.className = 'status success';
+                    status.innerHTML = `
+                        <i>✅</i> 转换成功！<br>
+                        <a href="${API_BASE}/api/file/download/?file_id=${result.data.file_id}" 
+                           class="download-btn" download>
+                            <i>📥</i> 下载文件
+                        </a>
+                    `;
+                } else {
+                    status.className = 'status error';
+                    status.innerHTML = `<i>❌</i> ${result.msg}`;
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.innerHTML = `<i>❌</i> 转换失败: ${error.message}`;
+            } finally {
+                progress.style.width = '100%';
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    progress.style.width = '0%';
+                }, 500);
+            }
+        });
+
+        fetch(`${API_BASE}/health`)
+            .then(res => res.json())
+            .then(data => {
+                console.log('服务状态:', data.msg);
+            })
+            .catch(err => {
+                console.log('服务未连接');
+            });
+    </script>
+</body>
+</html>
