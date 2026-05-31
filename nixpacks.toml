@@ -1,0 +1,12 @@
+[phases.setup]
+nixpkgs.archive = "2025-05-31"
+nixpkgs.overlays = ["https://github.com/railwayapp/nixpkgs-overlay/archive/main.tar.gz"]
+nixpkgs.packages = [
+  "ffmpeg"
+]
+
+[phases.build]
+commands = ["pip install -r requirements.txt"]
+
+[phases.start]
+command = "uvicorn main:app --host 0.0.0.0 --port $PORT"
