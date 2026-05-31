@@ -8,7 +8,7 @@ import subprocess
 from datetime import datetime, timedelta
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="视频去重服务", version="3.0")
@@ -26,33 +26,24 @@ OUTPUT_DIR = "./outputs"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def clear_expired_files():
-    expire_time = datetime.now() - timedelta(hours=2)
-    for dir_path in [UPLOAD_DIR, OUTPUT_DIR]:
-        if not os.path.exists(dir_path):
-            continue
-        for filename in os.listdir(dir_path):
-            file_path = os.path.join(dir_path, filename)
-            try:
-                if datetime.fromtimestamp(os.path.getctime(file_path)) < expire_time:
-                    os.remove(file_path)
-            except Exception as e:
-                logger.error(f"删除过期文件失败: {e}")
+@app.get("/")
+async def root():
+    return {"code": 200, "msg": "视频去重服务运行中"}
 
 @app.get("/health")
 async def health_check():
+    logger.info("健康检查")
     return {"code": 200, "msg": "服务运行正常"}
 
 @app.get("/test")
 async def test():
+    logger.info("测试接口")
     return {"code": 200, "msg": "测试成功"}
 
 @app.post("/api/video/dedup")
 async def video_dedup(file: UploadFile = File(...), intensity: str = "medium"):
-    clear_expired_files()
-    
     logger.info(f"开始处理视频，强度: {intensity}")
-
+    
     file_id = str(uuid.uuid4())
     input_path = os.path.join(UPLOAD_DIR, f"{file_id}_input.mp4")
     output_path = os.path.join(OUTPUT_DIR, f"{file_id}_dedup.mp4")
@@ -127,7 +118,6 @@ async def video_dedup(file: UploadFile = File(...), intensity: str = "medium"):
 
 @app.get("/api/video/download")
 async def download_video(file_id: str):
-    clear_expired_files()
     for filename in os.listdir(OUTPUT_DIR):
         if filename.startswith(file_id):
             return FileResponse(
@@ -138,5 +128,6 @@ async def download_video(file_id: str):
     raise HTTPException(status_code=404, detail="文件不存在或已过期")
 
 if __name__ == "__main__":
+    logger.info("启动视频去重服务...")
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, timeout_keep_alive=300)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="debug", timeout_keep_alive=300)
