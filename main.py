@@ -6,6 +6,10 @@ import uuid
 import shutil
 import subprocess
 from datetime import datetime, timedelta
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="视频去重服务", version="3.0")
 
@@ -32,41 +36,50 @@ def clear_expired_files():
             try:
                 if datetime.fromtimestamp(os.path.getctime(file_path)) < expire_time:
                     os.remove(file_path)
-            except:
-                pass
+            except Exception as e:
+                logger.error(f"删除过期文件失败: {e}")
 
 @app.get("/health")
 async def health_check():
     return {"code": 200, "msg": "服务运行正常"}
 
+@app.get("/test")
+async def test():
+    return {"code": 200, "msg": "测试成功"}
+
 @app.post("/api/video/dedup")
 async def video_dedup(file: UploadFile = File(...), intensity: str = "medium"):
     clear_expired_files()
+    
+    logger.info(f"开始处理视频，强度: {intensity}")
 
     file_id = str(uuid.uuid4())
     input_path = os.path.join(UPLOAD_DIR, f"{file_id}_input.mp4")
     output_path = os.path.join(OUTPUT_DIR, f"{file_id}_dedup.mp4")
 
-    with open(input_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-
-    watermark_text = f"DEDUP_{file_id[:8]}"
-
     try:
+        with open(input_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+        logger.info(f"文件已保存: {input_path}")
+
+        watermark_text = f"DEDUP_{file_id[:8]}"
+
         if intensity == "low":
             cmd = [
                 "ffmpeg", "-y", "-i", input_path,
                 "-vf", f"drawtext=text='{watermark_text}':fontsize=24:fontcolor=white:shadowcolor=black:shadowx=2:shadowy=2:x=10:y=10",
                 "-c:a", "copy",
                 "-preset", "ultrafast",
+                "-t", "30",
                 output_path
             ]
         elif intensity == "high":
             cmd = [
                 "ffmpeg", "-y", "-i", input_path,
-                "-vf", f"drawtext=text='{watermark_text}':fontsize=24:fontcolor=white:shadowcolor=black:shadowx=2:shadowy=2:x=10:y=10,scale=iw*0.95:ih*0.95,saturation=1.1:brightness=0.02",
+                "-vf", f"drawtext=text='{watermark_text}':fontsize=24:fontcolor=white:shadowcolor=black:shadowx=2:shadowy=2:x=10:y=10,scale=iw*0.95:ih*0.95",
                 "-c:a", "copy",
                 "-preset", "ultrafast",
+                "-t", "30",
                 output_path
             ]
         else:
@@ -75,15 +88,23 @@ async def video_dedup(file: UploadFile = File(...), intensity: str = "medium"):
                 "-vf", f"drawtext=text='{watermark_text}':fontsize=24:fontcolor=white:shadowcolor=black:shadowx=2:shadowy=2:x=10:y=10,scale=iw*0.98:ih*0.98",
                 "-c:a", "copy",
                 "-preset", "ultrafast",
+                "-t", "30",
                 output_path
             ]
         
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        logger.info(f"执行命令: {' '.join(cmd)}")
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        
+        logger.info(f"命令执行结果: returncode={result.returncode}")
         
         if result.returncode != 0:
-            raise Exception(result.stderr)
+            logger.error(f"FFmpeg 错误: {result.stderr}")
+            raise Exception(f"FFmpeg 错误: {result.stderr}")
         
         os.remove(input_path)
+        
+        logger.info(f"处理完成，输出文件: {output_path}")
         
         return {
             "code": 200,
@@ -94,11 +115,14 @@ async def video_dedup(file: UploadFile = File(...), intensity: str = "medium"):
             }
         }
     except subprocess.TimeoutExpired:
-        os.remove(input_path)
+        if os.path.exists(input_path):
+            os.remove(input_path)
+        logger.error("处理超时")
         raise HTTPException(status_code=500, detail="处理超时")
     except Exception as e:
         if os.path.exists(input_path):
             os.remove(input_path)
+        logger.error(f"处理失败: {e}")
         raise HTTPException(status_code=500, detail=f"处理失败: {str(e)}")
 
 @app.get("/api/video/download")
@@ -115,4 +139,4 @@ async def download_video(file_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, timeout_keep_alive=300)
