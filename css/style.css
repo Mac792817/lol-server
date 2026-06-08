@@ -520,6 +520,144 @@ body {
     line-height: 1.6;
 }
 
+/* 培训服务 */
+.training-section {
+    padding: 100px 0;
+    background: #f8f9fa;
+}
+
+.training-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.training-block {
+    background: #fff;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.block-header-blue {
+    background: linear-gradient(135deg, #0066cc, #00a8ff);
+    padding: 20px;
+    text-align: center;
+    color: #fff;
+}
+
+.block-header-green {
+    background: linear-gradient(135deg, #00aa88, #00cc99);
+    padding: 20px;
+    text-align: center;
+    color: #fff;
+}
+
+.block-header-blue h3,
+.block-header-green h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.knowledge-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+}
+
+.knowledge-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 15px;
+    border: 1px solid #eee;
+    transition: all 0.3s;
+}
+
+.knowledge-item:hover {
+    background: #f0f8ff;
+}
+
+.knowledge-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.knowledge-item span {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+}
+
+.skill-item {
+    padding: 25px;
+    border: 1px solid #eee;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.skill-item:hover {
+    background: #f0fff0;
+}
+
+.skill-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+.skill-item h4 {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.skill-item p {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.5;
+}
+
+.training-footer {
+    text-align: center;
+    padding: 30px;
+    background: linear-gradient(135deg, #0066cc, #00a8ff);
+    border-radius: 10px;
+    color: #fff;
+}
+
+.training-footer p {
+    margin-bottom: 20px;
+    font-size: 18px;
+}
+
+.training-footer .btn {
+    background: #fff;
+    color: #0066cc;
+    border: none;
+}
+
+.training-footer .btn:hover {
+    background: #f0f0f0;
+}
+
+@media (max-width: 768px) {
+    .training-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .knowledge-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 /* 技术特点 */
 .features-section {
     padding: 100px 0;
