@@ -71,7 +71,7 @@
 .timeline-item {
     display: flex;
     justify-content: flex-end;
-    padding-right: 50%;
+    padding-right: calc(50% + 40px);
     position: relative;
     margin-bottom: 50px;
 }
@@ -79,7 +79,7 @@
 .timeline-item:nth-child(even) {
     justify-content: flex-start;
     padding-right: 0;
-    padding-left: 50%;
+    padding-left: calc(50% + 40px);
 }
 
 .timeline-year {
@@ -93,6 +93,8 @@
     font-weight: bold;
     font-size: 18px;
     z-index: 1;
+    width: 80px;
+    text-align: center;
 }
 
 .timeline-content {
@@ -101,6 +103,7 @@
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     max-width: 350px;
+    width: 100%;
 }
 
 .timeline-content h3 {
