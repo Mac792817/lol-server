@@ -1,5 +1,0 @@
-[build]
-dockerfile = "Dockerfile"
-
-[deploy]
-port = 8000
