@@ -41,6 +41,11 @@ body {
     text-decoration: none;
 }
 
+.logo-img {
+    height: 50px;
+    width: auto;
+}
+
 .nav-menu {
     display: flex;
     list-style: none;
@@ -210,6 +215,44 @@ body {
     margin-bottom: 20px;
 }
 
+/* 公司前台展示 */
+.office-section {
+    padding: 100px 0;
+    background: #fff;
+}
+
+.office-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+}
+
+.office-image {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.office-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.office-text h3 {
+    font-size: 28px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.office-text p {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.8;
+}
+
 /* 技术特点 */
 .features-section {
     padding: 100px 0;
@@ -355,5 +398,9 @@ body {
 
     .section-title {
         font-size: 28px;
+    }
+
+    .office-content {
+        grid-template-columns: 1fr;
     }
 }
